@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function App() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:5000/api/health")
+    fetch(`${API_URL}/api/health`)
       .then((r) => r.json())
       .then(setData)
       .catch(console.error);
