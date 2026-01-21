@@ -23,6 +23,8 @@ import requests
 import time
 import requests
 from urllib.parse import urlencode
+from flask_cors import CORS
+
 
 
    
@@ -30,7 +32,10 @@ from urllib.parse import urlencode
 
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=[
+  "https://areatrans-4d36a.web.app",
+  "https://areatrans-4d36a.firebaseapp.com",
+])
 
 # ✅ En producción usa una variable de entorno y una clave MUY larga.
 app.config["JWT_SECRET_KEY"] = "CAMBIA_ESTA_CLAVE_SUPER_SECRETA_123456"
