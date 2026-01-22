@@ -43,7 +43,17 @@ app.config["JWT_SECRET_KEY"] = "CAMBIA_ESTA_CLAVE_SUPER_SECRETA_123456"
 # ✅ SQLite (archivo local)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "areatrans.db")
-app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+db_url = os.environ.get("DATABASE_URL")
+
+if db_url:
+    # Render Postgres a veces viene como postgres:// y SQLAlchemy prefiere postgresql://
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+    app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    DB_PATH = os.path.join(BASE_DIR, "areatrans.db")
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # ✅ SQLAlchemy + Migrate (para que exista `flask db ...`)
