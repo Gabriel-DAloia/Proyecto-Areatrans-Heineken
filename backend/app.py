@@ -14,7 +14,7 @@ import os
 from models import db, User, Hub, Employee, Attendance, ExtraHours, AsistenciasComment, LiquidacionRuta, LiquidacionEntry, KilosLitros, FlotaVehiculo, HubCompra, FlotaIncidencia, Contacto, RepartoCliente, HeinekenPedido, LiquidacionRuta
 from flask_migrate import Migrate
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import func
+from sqlalchemy import func, inspect
 from seed_liquidaciones import seed_liquidaciones
 from datetime import datetime
 from flask_jwt_extended import jwt_required
@@ -27,36 +27,41 @@ from flask_cors import CORS
 
 
 
-   
 
 
 
 app = Flask(__name__)
-CORS(app, origins=[
-  "https://areatrans-4d36a.web.app",
-  "https://areatrans-4d36a.firebaseapp.com",
-])
+
+# ✅ CORS: importante permitir Authorization y Content-Type, y soportar credenciales
+CORS(
+    app,
+    resources={r"/api/*": {"origins": [
+        "https://areatrans-4d36a.web.app",
+        "https://areatrans-4d36a.firebaseapp.com",
+        "http://localhost:5173"
+    ]}},
+    supports_credentials=True,
+    allow_headers=["Content-Type", "Authorization"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+)
 
 # ✅ En producción usa una variable de entorno y una clave MUY larga.
-app.config["JWT_SECRET_KEY"] = "CAMBIA_ESTA_CLAVE_SUPER_SECRETA_123456"
+app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "CAMBIA_ESTA_CLAVE_SUPER_SECRETA_123456")
 
-# ✅ SQLite (archivo local)
+# ✅ DB: Render usa DATABASE_URL, si no existe usamos SQLite local
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "areatrans.db")
 db_url = os.environ.get("DATABASE_URL")
 
 if db_url:
-    # Render Postgres a veces viene como postgres:// y SQLAlchemy prefiere postgresql://
     db_url = db_url.replace("postgres://", "postgresql://", 1)
     app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 else:
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    DB_PATH = os.path.join(BASE_DIR, "areatrans.db")
     app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# ✅ SQLAlchemy + Migrate (para que exista `flask db ...`)
+# ✅ SQLAlchemy + Migrate
 db.init_app(app)
 migrate = Migrate(app, db)
 
@@ -66,14 +71,6 @@ jwt = JWTManager(app)
 # Códigos permitidos
 ALLOWED_CODES = {"", "1", "F", "D", "V", "E", "L", "O", "M", "C"}
 
-with app.app_context():
-    # NO uses create_all si ya trabajas con migrations
-    # db.create_all()
-    try:
-        seed_liquidaciones()
-    except Exception:
-        # si no hay tablas aún (antes de upgrade), no rompe
-        pass
 
 def month_key(year: int, month: int) -> str:
     return f"{year:04d}-{month:02d}"
@@ -93,23 +90,8 @@ def parse_ymd(dt: str):
         return None
 
 
-def get_or_create_hub(hub_name: str) -> Hub:
-    """
-    Si el HUB no existe, lo crea.
-    (Si prefieres que NO se creen automáticamente, lo cambiamos luego.)
-    """
-    hub_name = hub_name.strip()
-    hub = Hub.query.filter_by(name=hub_name).first()
-    if hub:
-        return hub
-    hub = Hub(name=hub_name)
-    db.session.add(hub)
-    db.session.commit()
-    return hub
-
-
 def ensure_demo_admin():
-    """✅ Admin demo (único default que dejamos). No usamos create_all() para no romper migraciones."""
+    """✅ Admin demo (solo si existe tabla users)."""
     admin = User.query.filter_by(email="admin@demo.com").first()
     if not admin:
         admin = User(
@@ -123,21 +105,78 @@ def ensure_demo_admin():
         db.session.commit()
 
 
+def _init_db_if_needed():
+    """
+    ✅ Arregla Render: si la DB está vacía (sin tablas) las crea.
+    Además si hay error, hace rollback para evitar InFailedSqlTransaction.
+    """
+    try:
+        inspector = inspect(db.engine)
+        tables = set(inspector.get_table_names())
+
+        # Si no hay tablas o faltan las básicas, las creamos
+        if (not tables) or (("users" not in tables) or ("hubs" not in tables)):
+            db.create_all()
+
+        # Seed + admin demo (solo si ya existen tablas)
+        try:
+            ensure_demo_admin()
+        except Exception:
+            db.session.rollback()
+
+        try:
+            seed_liquidaciones()
+        except Exception:
+            db.session.rollback()
+
+        db.session.commit()
+    except Exception as e:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        print("DB init error:", e)
+
+
+with app.app_context():
+    _init_db_if_needed()
+
+
+@app.teardown_request
+def _teardown_request(exc):
+    """
+    ✅ Evita que una query fallida deje la sesión en estado abortado.
+    """
+    try:
+        if exc is not None:
+            db.session.rollback()
+    except Exception:
+        pass
+    finally:
+        try:
+            db.session.remove()
+        except Exception:
+            pass
+
+
 @app.before_request
 def _ensure_admin_once():
     """
-    Crea el admin demo cuando la BD ya tenga tablas (después de `flask db upgrade`).
+    Crea el admin demo cuando la BD ya tenga tablas.
     Si aún no existen, no rompe.
     """
     try:
         ensure_demo_admin()
     except Exception:
-        pass
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
 
 
 @app.get("/api/health")
 def health():
-    return jsonify(status="ok", message="Backend Flask + DB funcionando")
+    return jsonify(status="ok", message="Backend Flask + DB funcionando"), 200
 
 
 @app.get("/")
@@ -195,11 +234,14 @@ def login():
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
 
-    # ✅ Asegura admin demo (si la BD ya está migrada)
+    # ✅ Asegura admin demo (si la BD ya está lista)
     try:
         ensure_demo_admin()
     except Exception:
-        pass
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
 
     user = User.query.filter_by(email=email).first()
     if not user or not check_password_hash(user.password_hash, password):
@@ -256,16 +298,10 @@ def strip_hub_prefix(name: str) -> str:
     return name
 
 def hub_candidates(hub_name: str):
-    """
-    Orden IMPORTANTE:
-    - Si viene "Hub X": primero probamos "X" y luego "Hub X"
-    - Si viene "X": primero "X" y luego "Hub X"
-    """
     hub_name = normalize_hub_name(hub_name)
     no_prefix = strip_hub_prefix(hub_name)
     with_prefix = normalize_hub_name("Hub " + no_prefix)
 
-    # preferimos SIEMPRE el no_prefix
     cands = [no_prefix, with_prefix]
 
     seen = set()
@@ -280,13 +316,11 @@ def hub_candidates(hub_name: str):
 def get_or_create_hub(hub_name: str) -> Hub:
     hub_name = normalize_hub_name(hub_name)
 
-    # 1) Buscar por candidatos (case-insensitive)
     for cand in hub_candidates(hub_name):
         row = Hub.query.filter(func.lower(Hub.name) == func.lower(cand)).first()
         if row:
             return row
 
-    # 2) Crear SIEMPRE con nombre CANÓNICO (sin "Hub ")
     canonical = strip_hub_prefix(hub_name)
     row = Hub(name=canonical)
     db.session.add(row)
@@ -300,6 +334,13 @@ def get_or_create_hub(hub_name: str) -> Hub:
             if row:
                 return row
         raise
+
+# -------------------------------------------------------------------
+# 🔻🔻🔻 A PARTIR DE AQUÍ DEJA TU ARCHIVO IGUAL COMO LO TENÍAS 🔻🔻🔻
+# (todas tus rutas de asistencias, flota, kiloslitros, compras, etc.)
+# -------------------------------------------------------------------
+
+# ... PEGA AQUÍ EL RESTO DE TU app.py SIN CAMBIAR NADA ...
 
 
 # ======================================================
