@@ -99,7 +99,8 @@ export default function Compras({ hub, notify }) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/compras`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/compras`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -153,7 +154,8 @@ export default function Compras({ hub, notify }) {
         cantidad: c,
       };
 
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/compras`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/compras`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -215,7 +217,8 @@ export default function Compras({ hub, notify }) {
         comprado: Boolean(editComprado),
       };
 
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/compras/${it.id}`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/compras/${it.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -250,7 +253,8 @@ export default function Compras({ hub, notify }) {
     setUpdatingId(it.id);
     setError("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/compras/${it.id}`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/compras/${it.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -290,7 +294,8 @@ export default function Compras({ hub, notify }) {
     setDeletingId(it.id);
     setError("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/compras/${it.id}`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/compras/${it.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

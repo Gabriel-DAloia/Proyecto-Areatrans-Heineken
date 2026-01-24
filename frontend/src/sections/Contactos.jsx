@@ -45,7 +45,8 @@ export default function Contactos({ hub, notify }) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/contactos`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/contactos`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const text = await res.text();
@@ -70,7 +71,8 @@ export default function Contactos({ hub, notify }) {
     setError("");
     try {
       const payload = { nombre: n, cargo: String(cargo || "").trim(), telefono: t };
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/contactos`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/contactos`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
@@ -99,7 +101,8 @@ export default function Contactos({ hub, notify }) {
     setError("");
     try {
       const payload = { nombre: n, cargo: String(editCargo || "").trim(), telefono: t };
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/contactos/${x.id}`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/contactos/${x.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
@@ -126,7 +129,8 @@ export default function Contactos({ hub, notify }) {
     setDeletingId(x.id);
     setError("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/contactos/${x.id}`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/contactos/${x.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

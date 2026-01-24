@@ -111,7 +111,8 @@ export default function Incidencias({ hub, notify }) {
     setLoadingVeh(true);
     setErr("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/flota`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/flota`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const text = await res.text();
@@ -159,7 +160,8 @@ export default function Incidencias({ hub, notify }) {
     setLoadingInc(true);
     setErr("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/flota/${vehId}/incidencias`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/flota/${vehId}/incidencias`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const text = await res.text();
@@ -190,7 +192,8 @@ export default function Incidencias({ hub, notify }) {
         km: toIntOrZero(km),
       };
 
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/flota/${activeVehId}/incidencias`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/flota/${activeVehId}/incidencias`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
@@ -244,7 +247,8 @@ export default function Incidencias({ hub, notify }) {
         km: toIntOrZero(eKm),
       };
 
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/flota/${activeVehId}/incidencias/${editId}`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/flota/${activeVehId}/incidencias/${editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
@@ -274,7 +278,8 @@ export default function Incidencias({ hub, notify }) {
     setDeletingId(x.id);
     setErr("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/flota/${activeVehId}/incidencias/${x.id}`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/flota/${activeVehId}/incidencias/${x.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

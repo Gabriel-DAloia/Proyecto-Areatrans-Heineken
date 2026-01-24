@@ -9,6 +9,9 @@ const HEADER_ROW_2_H = 36; // fila "Repartidor / Metálico / ..."
 export default function Liquidaciones({ hub, notify }) {
   const token = useMemo(() => localStorage.getItem("token"), []);
 
+  // ✅ SOLO PARA FETCH (igual que en Compras / KilosLitros)
+  const base = import.meta.env.VITE_API_URL || "";
+
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
 
@@ -120,7 +123,8 @@ export default function Liquidaciones({ hub, notify }) {
     setLoadingRoutes(true);
     setError("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/liquidaciones/routes`, {
+      // ✅ SOLO CAMBIO: base en fetch
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/liquidaciones/routes`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const text = await res.text();
@@ -138,7 +142,8 @@ export default function Liquidaciones({ hub, notify }) {
   }
 
   async function loadMonthForRoute(code) {
-    const url = `/api/hubs/${encodeURIComponent(hub)}/liquidaciones?year=${year}&month=${month}&route_code=${encodeURIComponent(
+    // ✅ SOLO CAMBIO: base en fetch
+    const url = `${base}/api/hubs/${encodeURIComponent(hub)}/liquidaciones?year=${year}&month=${month}&route_code=${encodeURIComponent(
       code
     )}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -181,7 +186,8 @@ export default function Liquidaciones({ hub, notify }) {
     setCreatingRoute(true);
     setError("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/liquidaciones/routes`, {
+      // ✅ SOLO CAMBIO: base en fetch
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/liquidaciones/routes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -261,7 +267,8 @@ export default function Liquidaciones({ hub, notify }) {
         const data = dataByRoute[code];
         if (!data) continue;
 
-        const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/liquidaciones`, {
+        // ✅ SOLO CAMBIO: base en fetch
+        const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/liquidaciones`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -979,3 +986,4 @@ const styles = {
     lineHeight: 1.25,
   },
 };
+

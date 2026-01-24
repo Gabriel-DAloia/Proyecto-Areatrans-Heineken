@@ -163,7 +163,8 @@ export default function Asistencias({ hub, notify }) {
     setLoading(true);
     setError("");
     try {
-      const url = `/api/hubs/${encodeURIComponent(hub)}/asistencias?year=${year}&month=${month}`;
+      const base = import.meta.env.VITE_API_URL || "";
+      const url = `${base}/api/hubs/${encodeURIComponent(hub)}/asistencias?year=${year}&month=${month}`;
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -205,7 +206,8 @@ export default function Asistencias({ hub, notify }) {
     setCreating(true);
     setError("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/employees`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/employees`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -231,8 +233,9 @@ export default function Asistencias({ hub, notify }) {
   async function deleteEmployeeConfirmed(emp) {
     setError("");
     try {
+      const base = import.meta.env.VITE_API_URL || "";
       const res = await fetch(
-        `/api/hubs/${encodeURIComponent(hub)}/employees/${encodeURIComponent(emp.id)}`,
+        `${base}/api/hubs/${encodeURIComponent(hub)}/employees/${encodeURIComponent(emp.id)}`,
         { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -337,11 +340,12 @@ export default function Asistencias({ hub, notify }) {
 
     try {
       const changes = Object.values(pending);
+      const base = import.meta.env.VITE_API_URL || "";
 
       for (const ch of changes) {
         if (ch.type === "A") {
           const res = await fetch(
-            `/api/hubs/${encodeURIComponent(hub)}/asistencias/${encodeURIComponent(ch.empId)}/day`,
+            `${base}/api/hubs/${encodeURIComponent(hub)}/asistencias/${encodeURIComponent(ch.empId)}/day`,
             {
               method: "PUT",
               headers: {
@@ -359,7 +363,7 @@ export default function Asistencias({ hub, notify }) {
 
         if (ch.type === "HE") {
           const res = await fetch(
-            `/api/hubs/${encodeURIComponent(hub)}/asistencias/${encodeURIComponent(ch.empId)}/extra-hours`,
+            `${base}/api/hubs/${encodeURIComponent(hub)}/asistencias/${encodeURIComponent(ch.empId)}/extra-hours`,
             {
               method: "PUT",
               headers: {

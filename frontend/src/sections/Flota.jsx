@@ -32,7 +32,8 @@ export default function Flota({ hub, notify }) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/flota`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/flota`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const text = await res.text();
@@ -55,7 +56,8 @@ export default function Flota({ hub, notify }) {
     setSaving(true);
     setError("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/flota`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/flota`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -73,9 +75,9 @@ export default function Flota({ hub, notify }) {
       if (!v || !v.matricula) throw new Error("Respuesta inválida del servidor");
 
       setVehicles((prev) => {
-        const base = normalizeVehicles(prev);
-        const exists = base.some((x) => x?.id === v.id || x?.matricula === v.matricula);
-        const next = exists ? base : [...base, v];
+        const baseList = normalizeVehicles(prev);
+        const exists = baseList.some((x) => x?.id === v.id || x?.matricula === v.matricula);
+        const next = exists ? baseList : [...baseList, v];
         return normalizeVehicles(next);
       });
 
@@ -98,7 +100,8 @@ export default function Flota({ hub, notify }) {
     setDeletingId(v.id);
     setError("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/flota/${v.id}`, {
+      const base = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/flota/${v.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

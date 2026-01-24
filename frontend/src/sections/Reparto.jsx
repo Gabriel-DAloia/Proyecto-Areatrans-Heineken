@@ -84,6 +84,9 @@ function iconByEstado(estado) {
 export default function Reparto({ hub, notify }) {
   const token = useMemo(() => localStorage.getItem("token"), []);
 
+  // ✅ SOLO PARA FETCH (igual que en Compras)
+  const base = import.meta.env.VITE_API_URL || "";
+
   const [routes, setRoutes] = useState([]);
   const [routeId, setRouteId] = useState("");
 
@@ -159,7 +162,7 @@ export default function Reparto({ hub, notify }) {
     setLoadingRoutes(true);
     setError("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/liquidaciones/routes`, {
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/liquidaciones/routes`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const text = await res.text();
@@ -197,7 +200,7 @@ export default function Reparto({ hub, notify }) {
     setError("");
     try {
       const qs = new URLSearchParams({ route_id: String(rid) }).toString();
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/reparto/clientes?${qs}`, {
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/reparto/clientes?${qs}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -220,7 +223,7 @@ export default function Reparto({ hub, notify }) {
     if (!hub) return;
     setLoadingMotos(true);
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/reparto/motos`, {
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/reparto/motos`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const text = await res.text();
@@ -263,7 +266,7 @@ export default function Reparto({ hub, notify }) {
         ...(hasCoords ? { lat: Number(la), lng: Number(ln) } : {}),
       };
 
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/reparto/clientes`, {
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/reparto/clientes`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
@@ -298,7 +301,7 @@ export default function Reparto({ hub, notify }) {
 
     setError("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/reparto/clientes/${c.id}`, {
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/reparto/clientes/${c.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ estado: next }),
@@ -323,7 +326,7 @@ export default function Reparto({ hub, notify }) {
 
     setError("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/reparto/clientes/${c.id}`, {
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/reparto/clientes/${c.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -526,7 +529,13 @@ export default function Reparto({ hub, notify }) {
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                         <div style={{ fontWeight: 950 }}>{c.nombre}</div>
-                        <button onClick={(e) => { e.stopPropagation(); deleteCliente(c); }} style={styles.smallDanger}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteCliente(c);
+                          }}
+                          style={styles.smallDanger}
+                        >
                           Eliminar
                         </button>
                       </div>
@@ -540,7 +549,10 @@ export default function Reparto({ hub, notify }) {
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
                         <span style={{ fontSize: 12, opacity: 0.9 }}>{estadoLabel(c.estado)}</span>
                         <button
-                          onClick={(e) => { e.stopPropagation(); cycleEstado(c); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            cycleEstado(c);
+                          }}
                           style={styles.smallBtn}
                         >
                           Cambiar estado
@@ -558,24 +570,14 @@ export default function Reparto({ hub, notify }) {
 
         {/* Mapa */}
         <div style={styles.mapCard}>
-          <MapContainer
-            key={mapKey}
-            center={centerDefault}
-            zoom={12}
-            style={{ height: "100%", width: "100%", borderRadius: 14 }}
-          >
+          <MapContainer key={mapKey} center={centerDefault} zoom={12} style={{ height: "100%", width: "100%", borderRadius: 14 }}>
             <RecenterMap center={centerDefault} zoom={12} />
 
             <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
             {/* ✅ solo clientes con coords */}
             {clientesConCoords.map((c) => (
-              <Marker
-                key={`c-${c.id}`}
-                position={[c.lat, c.lng]}
-                icon={iconByEstado(c.estado)}
-                eventHandlers={{ click: () => selectCliente(c) }}
-              >
+              <Marker key={`c-${c.id}`} position={[c.lat, c.lng]} icon={iconByEstado(c.estado)} eventHandlers={{ click: () => selectCliente(c) }}>
                 <Popup>
                   <div style={{ fontWeight: 950 }}>{c.nombre}</div>
                   <div style={{ fontSize: 12, opacity: 0.8 }}>{c.direccion || "—"}</div>
@@ -752,4 +754,5 @@ const styles = {
     fontWeight: 900,
   },
 };
+
 

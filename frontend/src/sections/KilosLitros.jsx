@@ -3,6 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 export default function KilosLitros({ hub, notify }) {
   const token = useMemo(() => localStorage.getItem("token"), []);
 
+  // ✅ SOLO PARA FETCH (como en Compras)
+  const base = import.meta.env.VITE_API_URL || "";
+
   // filtros mes/año
   const now = useMemo(() => new Date(), []);
   const [year, setYear] = useState(now.getFullYear());
@@ -216,7 +219,8 @@ export default function KilosLitros({ hub, notify }) {
     setLoading(true);
     setError("");
     try {
-      const url = `/api/hubs/${encodeURIComponent(hub)}/kiloslitros?year=${year}&month=${month}`;
+      // ✅ SOLO CAMBIO: base en fetch
+      const url = `${base}/api/hubs/${encodeURIComponent(hub)}/kiloslitros?year=${year}&month=${month}`;
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -258,7 +262,8 @@ export default function KilosLitros({ hub, notify }) {
     setSaving(true);
     setError("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/kiloslitros`, {
+      // ✅ SOLO CAMBIO: base en fetch
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/kiloslitros`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -301,7 +306,8 @@ export default function KilosLitros({ hub, notify }) {
     setDeletingId(it.id);
     setError("");
     try {
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/kiloslitros/${it.id}`, {
+      // ✅ SOLO CAMBIO: base en fetch
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/kiloslitros/${it.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -363,7 +369,8 @@ export default function KilosLitros({ hub, notify }) {
         litros: v.l,
       };
 
-      const res = await fetch(`/api/hubs/${encodeURIComponent(hub)}/kiloslitros/${it.id}`, {
+      // ✅ SOLO CAMBIO: base en fetch
+      const res = await fetch(`${base}/api/hubs/${encodeURIComponent(hub)}/kiloslitros/${it.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -379,7 +386,6 @@ export default function KilosLitros({ hub, notify }) {
       const updated = json.item || json;
       if (!updated || updated.id == null) throw new Error("Respuesta inválida del servidor");
 
-      // ✅ reemplazar en state (comparación robusta por Number)
       const next = normalizeList(items).map((x) => (Number(x.id) === Number(it.id) ? { ...x, ...updated } : x));
       setItems(next);
       recalcTotals(next);
@@ -392,8 +398,6 @@ export default function KilosLitros({ hub, notify }) {
         message: `${hub} · ${updated.day || it.day} · Ruta ${updated.ruta_numero} · ${updated.nombre}`,
       });
 
-      // ✅ CLAVE para que "juan" desaparezca si ya no existe:
-      // re-sincroniza con backend del mes actual
       await loadKilosLitros();
     } catch (e) {
       setError(e.message || "Error");
