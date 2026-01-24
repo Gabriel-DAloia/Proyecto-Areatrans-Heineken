@@ -141,6 +141,24 @@ def _init_db_if_needed():
 with app.app_context():
     _init_db_if_needed()
 
+def to_float_es(v):
+    """
+    Convierte strings tipo '1.234,56' o '1234,56' o '1234.56' a float.
+    Si viene vacío / None => 0.0
+    """
+    if v is None:
+        return 0.0
+    s = str(v).strip()
+    if s == "":
+        return 0.0
+    # quitar separador de miles y pasar coma decimal a punto
+    s = s.replace(".", "").replace(",", ".")
+    try:
+        return float(s)
+    except Exception:
+        return 0.0
+
+
 
 @app.teardown_request
 def _teardown_request(exc):
